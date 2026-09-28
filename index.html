@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop Ledger & Due Tracker (Tk)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#16a34a',
+                            600: '#15803d',
+                            700: '#166534',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+    <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-3">
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center space-x-2">
+                    <div class="p-2 bg-emerald-600 text-white rounded-xl shadow-md">
+                        <i class="fa-solid fa-receipt text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-extrabold text-base sm:text-lg leading-tight text-slate-900 dark:text-white">Shop Ledger</h1>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Micro-Due & Quantity Tracker (৳)</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <!-- Shopkeeper / Ledger Selector -->
+                    <div class="relative">
+                        <select id="shopSelect" class="bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-100 font-semibold text-xs sm:text-sm py-2 pl-3 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
+                            <!-- Injected dynamically -->
+                        </select>
+                    </div>
+
+                    <button id="addShopBtn" class="p-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl text-xs sm:text-sm font-medium transition text-slate-700 dark:text-slate-200" title="Add New Shop/Ledger">
+                        <i class="fa-solid fa-plus text-xs sm:text-sm"></i> <span class="hidden sm:inline">New Shop</span>
+                    </button>
+
+                    <button id="exportBtn" class="p-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl text-xs sm:text-sm font-medium transition text-slate-700 dark:text-slate-200" title="Export Data">
+                        <i class="fa-solid fa-download text-xs sm:text-sm"></i>
+                    </button>
+
+                    <button id="themeToggleBtn" class="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition" title="Toggle Theme">
+                        <i class="fa-solid fa-moon dark:hidden text-base"></i>
+                        <i class="fa-solid fa-sun hidden dark:inline text-amber-400 text-base"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-6 space-y-6">
+
+        <!-- Active Shop Banner / Summary Hero Card -->
+        <section class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-5 sm:p-6 rounded-3xl shadow-xl relative overflow-hidden">
+            <div class="absolute -right-6 -bottom-6 opacity-10 text-emerald-400">
+                <i class="fa-solid fa-bangladeshi-taka-sign text-9xl"></i>
+            </div>
+
+            <div class="relative z-10 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="p-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg text-xs font-semibold">Current Ledger</span>
+                        <h2 id="activeShopName" class="text-base sm:text-lg font-bold text-slate-200">Tea Stall</h2>
+                    </div>
+                    <button id="deleteShopBtn" class="text-xs text-rose-400 hover:text-rose-300 hover:underline transition hidden">
+                        <i class="fa-solid fa-trash-can mr-1"></i>Delete Shop
+                    </button>
+                </div>
+
+                <div>
+                    <span class="text-xs font-medium uppercase tracking-wider text-slate-400">Total Remaining Owed</span>
+                    <div class="flex items-baseline space-x-1 mt-1">
+                        <span class="text-3xl sm:text-4xl font-extrabold text-amber-400 tracking-tight" id="heroRemainingDue">0 ৳</span>
+                    </div>
+                    <p id="balanceStatusText" class="text-xs text-slate-300 mt-1">You don't owe anything currently.</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 pt-3 border-t border-slate-700/80">
+                    <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700">
+                        <span class="text-[11px] font-semibold text-rose-400 uppercase tracking-wider block mb-0.5">Total Taken (Due)</span>
+                        <span id="heroTotalDue" class="text-lg font-bold text-slate-100">0 ৳</span>
+                    </div>
+                    <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700">
+                        <span class="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider block mb-0.5">Total Paid</span>
+                        <span id="heroTotalPaid" class="text-lg font-bold text-slate-100">0 ৳</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+            <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-base flex items-center space-x-2">
+                <i class="fa-solid fa-bolt text-amber-500"></i>
+                <span>Quick Log Entry</span>
+            </h3>
+
+            <!-- Quick Suggestion Chips -->
+            <div class="flex flex-wrap gap-1.5" id="quickSuggestions">
+                <button type="button" class="quick-chip px-3 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-lg text-xs font-medium transition" data-desc="Tea" data-unitprice="5" data-qty="1">🍵 Tea (5 Tk)</button>
+                <button type="button" class="quick-chip px-3 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-lg text-xs font-medium transition" data-desc="Special Tea" data-unitprice="10" data-qty="1">☕ Special Tea (10 Tk)</button>
+                <button type="button" class="quick-chip px-3 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-lg text-xs font-medium transition" data-desc="Cake" data-unitprice="10" data-qty="1">🍰 Cake (10 Tk)</button>
+                <button type="button" class="quick-chip px-3 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-lg text-xs font-medium transition" data-desc="Singara" data-unitprice="10" data-qty="2">🥟 2x Singara (20 Tk)</button>
+                <button type="button" class="quick-chip px-3 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-lg text-xs font-medium transition" data-desc="Cigarette" data-unitprice="15" data-qty="1">🚬 Cigarette (15 Tk)</button>
+                <button type="button" class="quick-chip px-3 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-lg text-xs font-medium transition" data-desc="Water Bottle" data-unitprice="20" data-qty="1">🍾 Water (20 Tk)</button>
+            </div>
+
+            <form id="quickLogForm" class="space-y-4 pt-1">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="sm:col-span-1">
+                        <label class="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">Item / Description</label>
+                        <input type="text" id="logDesc" required placeholder="e.g. Tea, Cake, Biscuit..." class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">Unit Price (Tk / ৳)</label>
+                        <input type="number" id="logUnitPrice" step="1" min="0" required placeholder="Price per item" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">Quantity</label>
+                        <div class="flex items-center space-x-1">
+                            <button type="button" id="btnQtyMinus" class="px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl text-slate-700 dark:text-slate-200 font-bold">-</button>
+                            <input type="number" id="logQuantity" min="1" value="1" required class="w-full text-center px-2 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <button type="button" id="btnQtyPlus" class="px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl text-slate-700 dark:text-slate-200 font-bold">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Preview Bar -->
+                <div class="flex items-center justify-between bg-slate-100 dark:bg-slate-900/60 p-3 rounded-2xl border border-slate-200 dark:border-slate-700/60">
+                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Calculation:</span>
+                    <div class="text-sm font-bold text-slate-800 dark:text-slate-100">
+                        <span id="previewCalculation">0 ৳ × 1</span> = <span id="previewTotalAmount" class="text-emerald-600 dark:text-emerald-400 text-base">0 ৳</span>
+                    </div>
+                </div>
+
+                <!-- Dual Action Buttons -->
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <button type="button" id="btnAddDue" class="w-full py-3 px-4 bg-rose-600 hover:bg-rose-700 active:scale-[0.99] text-white font-bold rounded-2xl shadow-md transition flex items-center justify-center space-x-2 text-sm sm:text-base">
+                        <i class="fa-solid fa-plus-circle"></i>
+                        <span>+ Add Due</span>
+                    </button>
+                    <button type="button" id="btnMarkPaid" class="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold rounded-2xl shadow-md transition flex items-center justify-center space-x-2 text-sm sm:text-base">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>✓ Pay Amount</span>
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <section class="space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
+                <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-base flex items-center space-x-2">
+                    <i class="fa-solid fa-clock-rotate-left text-emerald-600"></i>
+                    <span>Ledger History</span>
+                </h3>
+
+                <!-- Search and Filter controls -->
+                <div class="flex items-center space-x-2">
+                    <div class="relative flex-grow sm:w-48">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+                        <input type="text" id="searchInput" placeholder="Search item..." class="w-full pl-8 pr-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <select id="typeFilter" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs py-1.5 px-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="ALL">All Logs</option>
+                        <option value="DUE">Dues Only</option>
+                        <option value="PAID">Payments Only</option>
+                    </select>
+                    <span id="txCountBadge" class="text-xs bg-slate-200 dark:bg-slate-700 px-2.5 py-1 rounded-full font-semibold text-slate-600 dark:text-slate-300">0 logs</span>
+                </div>
+            </div>
+
+            <div id="transactionFeed" class="space-y-2.5">
+                <!-- Transactions dynamically loaded -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal: Add Shopkeeper / Shop -->
+    <div id="addShopModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm border border-slate-200 dark:border-slate-700 shadow-2xl p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-base">Add New Shopkeeper / Shop</h3>
+                <button id="closeShopModalBtn" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">Shop Name</label>
+                <input type="text" id="newShopNameInput" placeholder="e.g. Corner Tea Stall, Canteen..." class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button type="button" id="cancelShopModalBtn" class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300">Cancel</button>
+                <button type="button" id="confirmAddShopBtn" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition">Create Ledger</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Export Data Options -->
+    <div id="exportModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm border border-slate-200 dark:border-slate-700 shadow-2xl p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-base">Export Ledger Data</h3>
+                <button id="closeExportModalBtn" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Download a backup or spreadsheet report of your active ledger transactions.</p>
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button id="exportCSVBtn" class="py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center justify-center space-x-1.5 transition">
+                    <i class="fa-solid fa-file-csv"></i>
+                    <span>Export CSV</span>
+                </button>
+                <button id="exportJSONBtn" class="py-2.5 px-4 bg-slate-700 hover:bg-slate-800 text-white font-bold rounded-xl text-xs flex items-center justify-center space-x-1.5 transition">
+                    <i class="fa-solid fa-file-code"></i>
+                    <span>Export JSON</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-4 py-3 rounded-2xl shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center space-x-2 text-xs sm:text-sm font-semibold">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 dark:text-emerald-600"></i>
+        <span id="toastMsg">Notification message</span>
+    </div>
+
+    <script>
+        // Application State
+        let data = {
+            shops: [
+                { id: 'shop_1', name: 'Tea Stall' },
+                { id: 'shop_2', name: 'Grocery Shop' }
+            ],
+            activeShopId: 'shop_1',
+            transactions: [] // array of { id, shopId, desc, unitPrice, quantity, totalAmount, type: 'DUE' | 'PAID', timestamp }
+        };
+
+        // DOM Elements
+        const shopSelect = document.getElementById('shopSelect');
+        const activeShopName = document.getElementById('activeShopName');
+        const heroRemainingDue = document.getElementById('heroRemainingDue');
+        const heroTotalDue = document.getElementById('heroTotalDue');
+        const heroTotalPaid = document.getElementById('heroTotalPaid');
+        const balanceStatusText = document.getElementById('balanceStatusText');
+
+        const logDesc = document.getElementById('logDesc');
+        const logUnitPrice = document.getElementById('logUnitPrice');
+        const logQuantity = document.getElementById('logQuantity');
+        const btnQtyMinus = document.getElementById('btnQtyMinus');
+        const btnQtyPlus = document.getElementById('btnQtyPlus');
+        const previewCalculation = document.getElementById('previewCalculation');
+        const previewTotalAmount = document.getElementById('previewTotalAmount');
+
+        const btnAddDue = document.getElementById('btnAddDue');
+        const btnMarkPaid = document.getElementById('btnMarkPaid');
+        const transactionFeed = document.getElementById('transactionFeed');
+        const txCountBadge = document.getElementById('txCountBadge');
+        const searchInput = document.getElementById('searchInput');
+        const typeFilter = document.getElementById('typeFilter');
+
+        const addShopBtn = document.getElementById('addShopBtn');
+        const addShopModal = document.getElementById('addShopModal');
+        const closeShopModalBtn = document.getElementById('closeShopModalBtn');
+        const cancelShopModalBtn = document.getElementById('cancelShopModalBtn');
+        const confirmAddShopBtn = document.getElementById('confirmAddShopBtn');
+        const newShopNameInput = document.getElementById('newShopNameInput');
+        const deleteShopBtn = document.getElementById('deleteShopBtn');
+
+        const exportBtn = document.getElementById('exportBtn');
+        const exportModal = document.getElementById('exportModal');
+        const closeExportModalBtn = document.getElementById('closeExportModalBtn');
+        const exportCSVBtn = document.getElementById('exportCSVBtn');
+        const exportJSONBtn = document.getElementById('exportJSONBtn');
+
+        // Theme Toggle Logic
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        themeToggleBtn.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStorageData();
+            renderShopSelect();
+            updateTotalPreview();
+            renderApp();
+        });
+
+        function loadStorageData() {
+            const saved = localStorage.getItem('shop_ledger_data_tk_qty');
+            if (saved) {
+                try {
+                    data = JSON.parse(saved);
+                } catch(e) {
+                    initDefaultData();
+                }
+            } else {
+                initDefaultData();
+            }
+        }
+
+        function initDefaultData() {
+            data = {
+                shops: [
+                    { id: 'shop_1', name: 'Corner Tea Stall' },
+                    { id: 'shop_2', name: 'Neighborhood Grocery' }
+                ],
+                activeShopId: 'shop_1',
+                transactions: [
+                    { id: 'tx_1', shopId: 'shop_1', desc: 'Tea', unitPrice: 5, quantity: 1, totalAmount: 5, type: 'DUE', timestamp: Date.now() - 60000 * 20 },
+                    { id: 'tx_2', shopId: 'shop_1', desc: 'Cake', unitPrice: 10, quantity: 1, totalAmount: 10, type: 'DUE', timestamp: Date.now() - 60000 * 15 },
+                    { id: 'tx_3', shopId: 'shop_1', desc: 'Paid partially', unitPrice: 5, quantity: 1, totalAmount: 5, type: 'PAID', timestamp: Date.now() - 60000 * 5 }
+                ]
+            };
+            saveData();
+        }
+
+        function saveData() {
+            localStorage.setItem('shop_ledger_data_tk_qty', JSON.stringify(data));
+            renderApp();
+        }
+
+        // Calculation & Live Quantity Preview
+        function updateTotalPreview() {
+            const price = parseFloat(logUnitPrice.value) || 0;
+            const qty = parseInt(logQuantity.value) || 1;
+            const total = Math.round(price * qty);
+
+            previewCalculation.textContent = `${price} ৳ × ${qty}`;
+            previewTotalAmount.textContent = `${total} ৳`;
+        }
+
+        logUnitPrice.addEventListener('input', updateTotalPreview);
+        logQuantity.addEventListener('input', () => {
+            if (parseInt(logQuantity.value) < 1 || isNaN(parseInt(logQuantity.value))) {
+                logQuantity.value = 1;
+            }
+            updateTotalPreview();
+        });
+
+        btnQtyMinus.addEventListener('click', () => {
+            let current = parseInt(logQuantity.value) || 1;
+            if (current > 1) {
+                logQuantity.value = current - 1;
+                updateTotalPreview();
+            }
+        });
+
+        btnQtyPlus.addEventListener('click', () => {
+            let current = parseInt(logQuantity.value) || 1;
+            logQuantity.value = current + 1;
+            updateTotalPreview();
+        });
+
+        function renderShopSelect() {
+            shopSelect.innerHTML = data.shops.map(shop => `
+                <option value="${shop.id}" ${shop.id === data.activeShopId ? 'selected' : ''}>${escapeHTML(shop.name)}</option>
+            `).join('');
+        }
+
+        shopSelect.addEventListener('change', (e) => {
+            data.activeShopId = e.target.value;
+            saveData();
+        });
+
+        addShopBtn.addEventListener('click', () => {
+            newShopNameInput.value = '';
+            addShopModal.classList.remove('hidden');
+        });
+
+        closeShopModalBtn.addEventListener('click', () => addShopModal.classList.add('hidden'));
+        cancelShopModalBtn.addEventListener('click', () => addShopModal.classList.add('hidden'));
+
+        confirmAddShopBtn.addEventListener('click', () => {
+            const name = newShopNameInput.value.trim();
+            if (!name) return;
+
+            const newShop = {
+                id: 'shop_' + Date.now(),
+                name: name
+            };
+            data.shops.push(newShop);
+            data.activeShopId = newShop.id;
+
+            saveData();
+            renderShopSelect();
+            addShopModal.classList.add('hidden');
+            showToast(`Ledger created for ${name}`);
+        });
+
+        deleteShopBtn.addEventListener('click', () => {
+            if (data.shops.length <= 1) {
+                showToast('At least one shop ledger is required.');
+                return;
+            }
+            const currentShop = data.shops.find(s => s.id === data.activeShopId);
+            if (confirm(`Delete entire ledger for "${currentShop.name}" and all its history?`)) {
+                data.transactions = data.transactions.filter(t => t.shopId !== data.activeShopId);
+                data.shops = data.shops.filter(s => s.id !== data.activeShopId);
+                data.activeShopId = data.shops[0].id;
+
+                saveData();
+                renderShopSelect();
+                showToast('Shop ledger deleted');
+            }
+        });
+
+        // Quick Suggestion Chips Handler
+        document.querySelectorAll('.quick-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                logDesc.value = chip.getAttribute('data-desc');
+                logUnitPrice.value = chip.getAttribute('data-unitprice');
+                logQuantity.value = chip.getAttribute('data-qty') || 1;
+                updateTotalPreview();
+            });
+        });
+
+        // Add Transaction Handlers
+        btnAddDue.addEventListener('click', () => addTransaction('DUE'));
+        btnMarkPaid.addEventListener('click', () => addTransaction('PAID'));
+
+        function addTransaction(type) {
+            const desc = logDesc.value.trim();
+            const unitPrice = parseFloat(logUnitPrice.value);
+            const quantity = parseInt(logQuantity.value) || 1;
+
+            if (!desc) {
+                showToast('Please enter an item or description');
+                return;
+            }
+            if (isNaN(unitPrice) || unitPrice < 0) {
+                showToast('Please enter a valid price');
+                return;
+            }
+
+            const totalAmount = Math.round(unitPrice * quantity);
+
+            const newTx = {
+                id: 'tx_' + Date.now(),
+                shopId: data.activeShopId,
+                desc: desc,
+                unitPrice: Math.round(unitPrice),
+                quantity: quantity,
+                totalAmount: totalAmount,
+                type: type,
+                timestamp: Date.now()
+            };
+
+            data.transactions.push(newTx);
+            saveData();
+
+            logDesc.value = '';
+            logUnitPrice.value = '';
+            logQuantity.value = '1';
+            updateTotalPreview();
+
+            showToast(type === 'DUE' ? `Added ${newTx.totalAmount} Tk due (${newTx.quantity}x ${newTx.desc})` : `Paid ${newTx.totalAmount} Tk`);
+        }
+
+        // Search & Filters
+        searchInput.addEventListener('input', renderApp);
+        typeFilter.addEventListener('change', renderApp);
+
+        function renderApp() {
+            const currentShop = data.shops.find(s => s.id === data.activeShopId) || data.shops[0];
+            activeShopName.textContent = currentShop ? currentShop.name : 'Shop';
+
+            deleteShopBtn.classList.toggle('hidden', data.shops.length <= 1);
+
+            // Filter transactions for active shop
+            const shopTxs = data.transactions
+                .filter(t => t.shopId === data.activeShopId)
+                .sort((a, b) => a.timestamp - b.timestamp); // Chronological order
+
+            let totalDue = 0;
+            let totalPaid = 0;
+
+            // Calculate running balance per transaction
+            const txsWithBalance = shopTxs.map(tx => {
+                const amount = tx.totalAmount !== undefined ? tx.totalAmount : tx.amount;
+                if (tx.type === 'DUE') {
+                    totalDue += amount;
+                } else {
+                    totalPaid += amount;
+                }
+                const runningOwed = totalDue - totalPaid;
+                return { ...tx, computedTotal: amount, runningOwed };
+            });
+
+            const remainingOwed = totalDue - totalPaid;
+
+            // Update Summary Cards
+            heroRemainingDue.textContent = `${remainingOwed} ৳`;
+            heroTotalDue.textContent = `${totalDue} ৳`;
+            heroTotalPaid.textContent = `${totalPaid} ৳`;
+
+            if (remainingOwed > 0) {
+                balanceStatusText.textContent = `You owe ${remainingOwed} Tk to ${currentShop.name}`;
+                balanceStatusText.className = 'text-xs text-amber-300 font-medium mt-1';
+            } else if (remainingOwed < 0) {
+                balanceStatusText.textContent = `Shopkeeper owes you ${Math.abs(remainingOwed)} Tk extra!`;
+                balanceStatusText.className = 'text-xs text-emerald-300 font-medium mt-1';
+            } else {
+                balanceStatusText.textContent = `All cleared! You owe 0 Tk.`;
+                balanceStatusText.className = 'text-xs text-slate-300 font-medium mt-1';
+            }
+
+            // Apply Search and Type Filters for Feed
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const filterType = typeFilter.value;
+
+            let filteredTxs = [...txsWithBalance].reverse(); // Latest on top
+
+            if (filterType !== 'ALL') {
+                filteredTxs = filteredTxs.filter(t => t.type === filterType);
+            }
+            if (searchTerm) {
+                filteredTxs = filteredTxs.filter(t => t.desc.toLowerCase().includes(searchTerm));
+            }
+
+            txCountBadge.textContent = `${filteredTxs.length} log${filteredTxs.length !== 1 ? 's' : ''}`;
+
+            if (filteredTxs.length === 0) {
+                transactionFeed.innerHTML = `
+                    <div class="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 text-center space-y-2">
+                        <i class="fa-solid fa-receipt text-3xl text-slate-300 dark:text-slate-600"></i>
+                        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">No matching transaction logs found.</p>
+                        <p class="text-[11px] text-slate-400">Use the form above to quickly add items with quantities or payments!</p>
+                    </div>
+                `;
+            } else {
+                transactionFeed.innerHTML = filteredTxs.map(tx => createTxCardHTML(tx)).join('');
+            }
+        }
+
+        function createTxCardHTML(tx) {
+            const isDue = tx.type === 'DUE';
+            const formattedTime = formatTime(tx.timestamp);
+            const qty = tx.quantity || 1;
+            const unitPrice = tx.unitPrice !== undefined ? tx.unitPrice : tx.computedTotal;
+            const hasQtyBreakdown = isDue && (qty > 1 || tx.unitPrice !== undefined);
+
+            return `
+                <div class="bg-white dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-3 hover:border-slate-300 dark:hover:border-slate-600 transition">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${isDue ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400' : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'}">
+                            <i class="fa-solid ${isDue ? 'fa-arrow-up-right-from-square' : 'fa-hand-holding-dollar'} text-base"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <h4 class="font-bold text-sm text-slate-800 dark:text-slate-100">
+                                    ${escapeHTML(tx.desc)}
+                                    ${hasQtyBreakdown ? `<span class="text-xs text-slate-500 font-medium ml-1">(x${qty})</span>` : ''}
+                                </h4>
+                                <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded ${isDue ? 'bg-rose-50 text-rose-600 dark:bg-rose-900/40 dark:text-rose-300' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300'}">
+                                    ${isDue ? 'Due Added' : 'Payment'}
+                                </span>
+                            </div>
+                            <div class="flex items-center space-x-2 mt-0.5 text-[11px] text-slate-400">
+                                ${hasQtyBreakdown ? `<span>${unitPrice} ৳ × ${qty}</span> <span>•</span>` : ''}
+                                <span>${formattedTime}</span>
+                                <span>•</span>
+                                <span class="font-medium text-slate-500 dark:text-slate-400">Bal after: ${tx.runningOwed} ৳</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-3">
+                        <span class="font-extrabold text-base ${isDue ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}">
+                            ${isDue ? '+' : '-'}${tx.computedTotal} ৳
+                        </span>
+                        <button onclick="deleteTx('${tx.id}')" class="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg transition" title="Delete log">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.deleteTx = function(txId) {
+            data.transactions = data.transactions.filter(t => t.id !== txId);
+            saveData();
+            showToast('Log removed');
+        };
+
+        exportBtn.addEventListener('click', () => exportModal.classList.remove('hidden'));
+        closeExportModalBtn.addEventListener('click', () => exportModal.classList.add('hidden'));
+
+        exportCSVBtn.addEventListener('click', () => {
+            const currentShop = data.shops.find(s => s.id === data.activeShopId) || data.shops[0];
+            const shopTxs = data.transactions.filter(t => t.shopId === data.activeShopId);
+
+            if (shopTxs.length === 0) {
+                showToast('No transactions to export.');
+                return;
+            }
+
+            let csvContent = 'data:text/csv;charset=utf-8,Date,Item,Type,UnitPrice_Tk,Quantity,TotalAmount_Tk\n';
+            shopTxs.forEach(t => {
+                const dateStr = new Date(t.timestamp).toLocaleString().replace(/,/g, '');
+                const price = t.unitPrice !== undefined ? t.unitPrice : t.amount;
+                const qty = t.quantity || 1;
+                const total = t.totalAmount !== undefined ? t.totalAmount : t.amount;
+                csvContent += `"${dateStr}","${t.desc}","${t.type}",${price},${qty},${total}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', `${currentShop.name.replace(/\s+/g, '_')}_ledger.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            exportModal.classList.add('hidden');
+            showToast('CSV report downloaded!');
+        });
+
+        exportJSONBtn.addEventListener('click', () => {
+            const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data, null, 2));
+            const link = document.createElement('a');
+            link.setAttribute('href', dataStr);
+            link.setAttribute('download', `shop_ledger_backup.json`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            exportModal.classList.add('hidden');
+            showToast('JSON backup downloaded!');
+        });
+
+        // Utility Helpers
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const isToday = date.toDateString() === now.toDateString();
+
+            const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            if (isToday) {
+                return `Today, ${timeStr}`;
+            }
+            return `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${timeStr}`;
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            toastMsg.textContent = msg;
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
